@@ -9,6 +9,7 @@
 
 # User-specific files
 .Ruserdata
+.Rprofile
 
 # Example code in package build process
 *-Ex.R
@@ -331,14 +332,23 @@ TSWLatexianTemp*
 *.~lock.*
 
 
-# VS Code temporary files
 
+# VS Code specific files
+
+# Temporary files
 c.attach()*
+
+# Workspace
+*.code-workspace
+
+
 
 # Video files
 
 *.mp4
 
+
+
 # Excluded folders
 
-*/output
+/*/bugs-output/
