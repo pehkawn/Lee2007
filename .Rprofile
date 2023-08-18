@@ -14,6 +14,7 @@ if(file.exists(".RData")) load(".RData")
 ## Libraries
 # library(chatgpt)
 library(R2OpenBUGS)
+library(coda)
 library(rstan)
 
 ## Working directory

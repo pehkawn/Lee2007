@@ -340,3 +340,5 @@ c.attach()*
 *.mp4
 
 # Excluded folders
+
+*/output
