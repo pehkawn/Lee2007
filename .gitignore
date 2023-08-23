@@ -41,10 +41,6 @@ vignettes/*.pdf
 # R Environment Variables
 .Renviron
 
-.Rproj.user
-.Rhistory
-.Ruserdata
-
 
 # LaTeX-specific files
 
@@ -349,6 +345,10 @@ c.attach()*
 
 
 
-# Excluded folders
+# User files
+
+testing.ipynb
+
+# User folders
 
 /*/bugs-output/
