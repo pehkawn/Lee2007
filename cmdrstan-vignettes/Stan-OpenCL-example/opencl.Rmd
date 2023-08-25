@@ -70,7 +70,7 @@ using vectorization as much as possible when using probability distributions.
 Consider a simple logistic regression with parameters `alpha` and `beta`,
 covariates `X`, and outcome `y`.
 
-```
+```{stan, output.var="model"}
 data {
   int<lower=1> k;
   int<lower=0> n;
