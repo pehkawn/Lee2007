@@ -1,40 +1,38 @@
 data {
-  int<lower=0> N; // number of observations
-  int<lower=0> P; // number of variables
-  matrix[N, P] y; // observed data
-  vector[2] u = [0, 0]; // prior mean for xi
-  matrix[2, 2] R = [ [1.0, 0.0], [0.0, 1.0] ]; // prior covariance matrix for xi
-}
-
-transformed data {
-   
+    int<lower=1> N; // number of observations
+    int<lower=1> P; // number of outcome variables
+    matrix[N, P] y; // outcome data
 }
 
 parameters {
-    vector[P] alp; // intercepts
-    vector[N] eta; // latent variable
     matrix[N, 2] xi; // latent variables
+    vector[N] eta; // latent variable
+    vector<lower=0>[2] psi; // measurement error precisions
+    real<lower=0> psd; // standard deviation of eta
+    matrix<lower=-1, upper=1>[2, 2] phi; // covariance matrix
+    vector[9] alp; // intercepts
     real lam[6]; // loadings
     real gam[2]; // coefficients for nu[i]
-    vector<lower=0>[P] psi; // precisions of y
-    real<lower=0> psd; // precision of eta
-    matrix[2, 2] phi;
-
 }
 
 transformed parameters {
-   vector[P] sgm = 1/psi;
-   real sgd = 1/psd;
-   matrix[2, 2] phx = inverse(phi);
-}
+    matrix[2, 2] phx; // inverse covariance matrix
+    vector[N] nu; // intermediate variable
+    vector[N] dthat; // intermediate variable
 
+    phx = inverse(phi);
+
+    for (i in 1:N) {
+        nu[i] = gam[1] * xi[i, 1] + gam[2] * xi[i, 2];
+        dthat[i] = eta[i] - nu[i];
+    }
+}
 
 model {
     // Measurement equation model
     for (i in 1:N) {
         vector[P] mu;
-        vector[P] ephat;
-        
+
         mu[1] = eta[i] + alp[1];
         mu[2] = lam[1] * eta[i] + alp[2];
         mu[3] = lam[2] * eta[i] + alp[3];
@@ -45,8 +43,7 @@ model {
         mu[8] = lam[5] * xi[i, 2] + alp[8];
         mu[9] = lam[6] * xi[i, 2] + alp[9];
 
-        y[i] ~ normal(mu[i], psi);
-        ephat[i] = y[i] - mu[i]
+        y[i] ~ multi_normal(mu, diag_matrix(psi));
     }
 
     // Structural equation model
@@ -72,5 +69,6 @@ model {
     }
     psd ~ gamma(9, 4);
     // phi ~ wishart(5, diag_matrix(rep_vector(1, 2)));
-    phi ~ wishart(5, R[1:2, 1:2]);
+    phi[1:2, 1:2] ~ wishart(5, R[1:2, 1:2]);
 }
+
