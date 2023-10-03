@@ -1,12 +1,12 @@
 data{
 	int<lower=0> N; // number of observations
     int<lower=1> P; // number of variables
-    array[N] vector[P] z; // observed data
-	array[P] vector[6] thd; // Thresholds
+    array[N, P] int<lower=1, upper=5> z; // observed data
+	array[P] ordered[4] thd; // Thresholds
 }
 
 transformed data {
-   	cov_matrix[4] R = create_diagonal_matrix(8.0, 4); // prior covariance matrix for xi
+   	cov_matrix[4] R = diag_matrix(rep_vector(8.0, 4)); // prior covariance matrix for xi
 	vector[4] u = rep_vector(0,4); // prior mean for xi
 }
 
@@ -18,7 +18,7 @@ parameters {
 	vector<lower=0>[P] psi; // precisions of y
 	real<lower=0> psd; // precision of eta
 	cov_matrix[4] phi;
-	vector[21] var_lam;
+	
 }
 
 transformed parameters {
@@ -33,10 +33,12 @@ model {
     array[N] vector[P] ephat;
     vector[N] nu;
     vector[N] dthat;
+	array[21] real var_lam;
+	real var_gam;
 
 	//priors on precisions
-    psi[j] ~ gamma(10,8);
-    psd ~ dgamma(10,8);
+    psi ~ gamma(10,8);
+    psd ~ gamma(10,8);
     phi ~ wishart(30, R);
 
 	//priors on loadings and coefficients
@@ -62,14 +64,11 @@ model {
     var_lam[20] = 4.0 * psi[25];
     var_lam[21] = 4.0 * psi[26];
     
-    lam[i] ~ normal(0.8,var_lam[i])
+    lam ~ normal(0.8,var_lam);
 
     var_gam = 4.0 * psd;
 
-    gam[1] ~ normal(0.6,var_gam);
-    gam[2] ~ normal(0.6,var_gam);
-    gam[3] ~ normal(0.4,var_gam);
-    gam[4] ~ normal(0.4,var_gam);
+    gam ~ normal(0.6,var_gam);
 
     for(i in 1:N){
         //measurement equation model
@@ -102,9 +101,10 @@ model {
         mu[i,26] = lam[21] * xi[i,4];
 
 		for(j in 1:P){
-            y[i,j] ~ normal(mu[i,j], psi[j])I(thd[j, z[i, j]], thd[j, z[i, j] + 1]);
+            // y[i,j] ~ normal(mu[i,j], psi[j]) * step(thd[j, z[i,j]] - y[i,j]);
+			z[i,j] ~ ordered_logistic(mu[i,j], thd[j]);
         }
-		ephat[i] = y[i] - mu[i];
+		// ephat[i] = y[i] - mu[i];
 
         // structural equation model
 
@@ -115,13 +115,6 @@ model {
 
 	xi ~ multi_normal(u, phi);
 	eta ~ normal(nu, psd);
-	
-    }
-
-    
-
-    
-
-    
 
 } //end of model
+
