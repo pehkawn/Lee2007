@@ -1,0 +1,167 @@
+
+Model: Finite mixtures in Structural Equation Model
+Data Set Name: YO.dat
+Sample Size: N=800
+
+We assume a mixture of K subpopulations, and let L[i] denote a latent group membership indicator for sample i, pi[1:K] are the unknown mixing proportions. Bayesian estimates are obtained by using permutation sampler with the identifiability constraint mu[1,5]<mu[2,5].
+
+model {
+	for(i in 1:N){
+		#measurement equation model
+		for(j in 1:P){
+			y[i,j]~dnorm(mu[i,j],psi[L[i],j])
+			ephat[i,j]<-y[i,j]-mu[i,j]
+		}
+		mu[i,1]<-eta[i]+alp[L[i],1]
+		mu[i,2]<-lam[L[i],1]*eta[i]+alp[L[i],2]
+		mu[i,3]<-lam[L[i],2]*eta[i]+alp[L[i],3]
+		mu[i,4]<-xi[i,1]+alp[L[i],4]
+		mu[i,5]<-lam[L[i],3]*xi[i,1]+alp[L[i],5]
+		mu[i,6]<-lam[L[i],4]*xi[i,1]+alp[L[i],6]
+		mu[i,7]<-xi[i,2]+alp[L[i],7]
+		mu[i,8]<-lam[L[i],5]*xi[i,2]+alp[L[i],8]
+		mu[i,9]<-lam[L[i],6]*xi[i,2]+alp[L[i],9]
+		
+		#structural equation model
+		xi[i,1:2]~dmnorm(u[1:2],phi.xi[L[i],1:2,1:2])
+		eta[i]~dnorm(nu[i],psd[L[i]])
+		nu[i]<-gam[L[i],1]*xi[i,1]+gam[L[i],2]*xi[i,2]
+		dthat[i]<-eta[i]-nu[i]
+		
+		L[i] ~ dcat(pi[1:K])
+	}# end of i
+	
+    # prior for mixture probability vector
+	pi[1:K] ~ ddirch(alpha[])
+	for (j in 1:K) {alpha[j]<-1}
+	
+	# priors on intercepts: for finding the identification constraints
+	#alp[1,1] ~ dnorm(0.0321,0.01);	 alp[2,1] ~ dnorm(0.0321,0.01)
+	#alp[1,2] ~ dnorm(0.0040,0.01);	 alp[2,2] ~ dnorm(0.0040,0.01)
+	#alp[1,3] ~ dnorm(0.0132,0.01);	 alp[2,3] ~ dnorm(0.0132,0.01)
+	#alp[1,4] ~ dnorm(0.2786,0.01);	 alp[2,4] ~ dnorm(0.2786,0.01)
+	#alp[1,5] ~ dnorm(0.8876,0.01);	 alp[2,5] ~ dnorm(0.8876,0.01)
+	#alp[1,6] ~ dnorm(0.5148,0.01);     alp[2,6] ~ dnorm(0.5148,0.01)
+	#alp[1,7] ~ dnorm(1.0150,0.01);	 alp[2,7] ~ dnorm(1.0150,0.01)
+	#alp[1,8] ~ dnorm(1.0378,0.01);	 alp[2,8] ~ dnorm(1.0378,0.01)
+	#alp[1,9] ~ dnorm(0.9449,0.01);	 alp[2,9] ~ dnorm(0.9449,0.01)
+
+	# priors on intercepts: for the final Bayesian solutions
+	alp[1,1] ~ dnorm(0.0321,0.01);	 alp[2,1] ~ dnorm(0.0321,0.01)
+	alp[1,2] ~ dnorm(0.0040,0.01);	 alp[2,2] ~ dnorm(0.0040,0.01)
+	alp[1,3] ~ dnorm(0.0132,0.01);	 alp[2,3] ~ dnorm(0.0132,0.01)
+	alp[1,4] ~ dnorm(0.2786,0.01);	 alp[2,4] ~ dnorm(0.2786,0.01)
+	alp[1,6] ~ dnorm(0.5148,0.01);     alp[2,6] ~ dnorm(0.5148,0.01)
+	alp[1,7] ~ dnorm(1.0150,0.01);	 alp[2,7] ~ dnorm(1.0150,0.01)
+	alp[1,8] ~ dnorm(1.0378,0.01);	 alp[2,8] ~ dnorm(1.0378,0.01)
+	alp[1,9] ~ dnorm(0.9449,0.01);	 alp[2,9] ~ dnorm(0.9449,0.01)
+	alp[2,5] ~ dnorm(0.8876,0.00001)I(alp[1,5],)
+	alp[1,5] ~ dnorm(0.8876,0.00001)I(,alp[2,5])
+	
+	# priors on loadings and coefficients
+	lam[1,1]~dnorm(0.4,psi[1,2]);    lam[1,2]~dnorm(0.4,psi[1,3])
+	lam[1,3]~dnorm(0.8,psi[1,5]);    lam[1,4]~dnorm(0.8,psi[1,6])
+	lam[1,5]~dnorm(0.4,psi[1,8]);    lam[1,6]~dnorm(0.4,psi[1,9])
+	lam[2,1]~dnorm(0.8,psi[2,2]);    lam[2,2]~dnorm(0.8,psi[2,3])
+	lam[2,3]~dnorm(0.4,psi[2,5]);    lam[2,4]~dnorm(0.4,psi[2,6])
+	lam[2,5]~dnorm(0.8,psi[2,8]);    lam[2,6]~dnorm(0.8,psi[2,9])
+	gam[1,1]~dnorm(0.2,psd[1]);     gam[1,2]~dnorm(0.7,psd[1])
+    gam[2,1]~dnorm(0.7,psd[2]);     gam[2,2]~dnorm(0.2,psd[2])	
+	
+	# priors on precisions
+	for(j in 1:K){
+		for(k in 1:P){
+			psi[j,k]~dgamma(10.0, 8.0)
+			sgm[j,k]<-1/psi[j,k]
+		}
+	}
+	for(j in 1:K){
+		psd[j]~dgamma(10.0, 8.0)
+		sgd[j]<-1/psd[j]
+	}
+	phi.xi[1,1:2,1:2]~dwish(R1[1:2,1:2], 6)
+	phx[1,1:2,1:2]<-inverse(phi.xi[1,1:2,1:2])
+    phi.xi[2,1:2,1:2]~dwish(R2[1:2,1:2], 6)
+	phx[2,1:2,1:2]<-inverse(phi.xi[2,1:2,1:2])
+} #end of model
+
+Data 
+list(N=800,P=9,K=2, u=c(0.0, 0.0),          
+      R1=structure(
+		.Data= c(5.0, 0.0, 0.0, 5.0),  
+		.Dim= c(2,2)),
+      R2=structure(
+		.Data= c(5.0, 0.0, 0.0, 5.0),  
+   	 .Dim= c(2,2)),			
+      y=structure(
+		.Data= c(paste YO.dat here),  
+        .Dim= c(800,9)))
+
+Three different initial values
+list(
+	pi=c(0.75,0.25),
+    alp=structure(
+        .Data=c(0.0,0.0,0.0,0.0,0.0,1.0,1.0,1.0,1.0,0.0,0.0,0.0,0.5,1.5,0.0,1.0,1.0,1.0),
+        .Dim=c(2,9)),
+	lam=structure(
+	     .Data=c(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+	     .Dim=c(2,6)),
+	psi=structure(
+	    .Data=c(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
+	    .Dim=c(2,9)),
+	psd=c(1.0, 1.0),
+	gam=structure(
+	      .Data=c(1.0, 1.0, 1.0, 1.0),
+	      .Dim=c(2,2)),
+	phi.xi=structure(
+		.Data=c(1.0, 0.1, 0.1, 0.9, 1.0, 0.1, 0.1, 0.9),
+		.Dim=c(2,2,2)))
+		
+		
+list(
+	pi=c(0.456, 0.544),
+    alp=structure(
+        .Data=c(-0.1001,-0.0372,-0.0562,-0.0203,0.0719,0.9614,0.9253,0.9327,0.8852,-0.1018,-0.1605,
+    -0.1262,0.3071,1.4770,-0.1706,0.8305,0.9410,0.8039),
+        .Dim=c(2,9)),
+	lam=structure(
+	     .Data=c(0.347,0.351,0.675,0.647,0.327,0.433,0.742,0.754,0.248,0.337,0.826,0.761),
+	     .Dim=c(2,6)),
+	psi=structure(
+	    .Data=c(0.345,0.406,0.423,0.348,0.377,0.412,0.418,0.463,0.344,
+	0.415,0.389,0.456,0.421,0.490,0.399,0.380,0.385,0.395),
+	    .Dim=c(2,9)),
+	psd=c(0.266,0.331),
+	gam=structure(
+	      .Data=c(0.061,0.638,0.518,0.060),
+	      .Dim=c(2,2)),
+	phi.xi=structure(
+		.Data=c(0.668,0.130,0.130,0.761,0.515,0.025,0.025,0.589),
+		.Dim=c(2,2,2)))
+		
+list(
+	pi=c(0.572, 0.428),
+    alp=structure(
+        .Data=c(0.1810,0.1376,0.1279,0.2650,0.3129,1.2180,1.2150,1.1160,1.0650,0.1846,
+    0.0904,0.1189,0.5696,1.7070,0.0287,1.0990,1.1730,1.0370),
+        .Dim=c(2,9)),
+	lam=structure(
+	     .Data=c(0.521,0.538,0.965,0.955,0.530,0.649,0.994,1.032,0.540,0.651,1.154,1.058),
+	     .Dim=c(2,6)),
+	psi=structure(
+	    .Data=c(0.661,0.560,0.593,0.613,0.667,0.665,0.745,0.642,
+	0.501,0.667,0.592,0.692,0.840,0.707,0.636,0.626,0.618,0.610),
+	    .Dim=c(2,9)),
+	psd=c(0.597,0.625),
+	gam=structure(
+	    .Data=c(0.346,0.979,0.972,0.332),
+	    .Dim=c(2,2)),
+	phi.xi=structure(
+		.Data=c(1.109,0.398,0.398,1.294,1.067,0.264,0.264,1.003),
+		.Dim=c(2,2,2)))
+
+
+
+
+
+

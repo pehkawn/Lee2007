@@ -1,0 +1,127 @@
+model{
+     for(i in 1:N){
+     # structural equation
+     xi[i,1:6]~dmnorm(u[1:6],phi[1:6,1:6])
+     for(j in 1:2){ xxi[i,j]~dnorm(nu[i,j],psd[j]) }
+     nu[i,1]<-vu[1]+gam[1]*xi[i,1]+gam[2]*xi[i,3]+gam[3]*xi[i,5]
+     +gam[4]*xi[i,1]*xi[i,3]+gam[5]*xi[i,1]*xi[i,5]+gam[6]*xi[i,3]*xi[i,5]
+     nu[i,2]<-vu[2]+gam[7]*xi[i,2]+gam[8]*xi[i,4]+gam[9]*xi[i,6]
+     +gam[10]*xi[i,2]*xi[i,4]+gam[11]*xi[i,2]*xi[i,6]+gam[12]*xi[i,4]*xi[i,6]
+
+     # measurement models
+     for(j in 1:20){ y[i,j]~dnorm(mu[i,j],psi[j]) }
+         mu[i,1]<- xxi[i,1]
+         mu[i,2]<- xxi[i,1]+xxi[i,2]
+         mu[i,3]<- xxi[i,1]+2*xxi[i,2]
+         mu[i,4]<- xxi[i,1]+11*xxi[i,2]
+         mu[i,5]<- xi[i,1]
+         mu[i,6]<- xi[i,1]+xi[i,2]
+         mu[i,7]<- xi[i,1]+2*xi[i,2]
+         mu[i,8]<- xi[i,1]+11*xi[i,2]
+         mu[i,9]<- xi1[i,1]
+         mu[i,10]<- lam[1]*xi1[i,1]
+         mu[i,11]<- lam[2]*xi1[i,1]
+         mu[i,12]<- xi1[i,2]
+         mu[i,13]<- lam[3]*xi1[i,2]
+         mu[i,14]<- lam[4]*xi1[i,2]
+         mu[i,15]<- xi1[i,3]
+         mu[i,16]<- lam[5]*xi1[i,3]
+         mu[i,17]<- lam[6]*xi1[i,3]
+         mu[i,18]<- xi1[i,4]
+         mu[i,19]<- lam[7]*xi1[i,4]
+         mu[i,20]<- lam[8]*xi1[i,4]
+
+         xi1[i,1]<- xi[i,3]
+         xi1[i,2]<- xi[i,3]+xi[i,4]
+         xi1[i,3]<- xi[i,3]+2*xi[i,4]
+         xi1[i,4]<- xi[i,3]+11*xi[i,4]
+
+       for(j in 1:4){ z1[i,j]~dcat(p1[i,j,1:C1])
+                      p1[i,j,1]<-Q1[i,j,1]
+                      for(t in 2:C1-1){ p1[i,j,t]<- Q1[i,j,t]-Q1[i,j,t-1] }
+                      p1[i,j,C1]<- 1-Q1[i,j,C1-1]
+       for(t in 1:C1-1){ logit(Q1[i,j,t])<- alph1[j,t]-mu[i,20+2*j-1] } }  #end j
+
+       for(j in 1:4){ z2[i,j]~dcat(p2[i,j,1:C2])
+                      p2[i,j,1]<-Q2[i,j,1]
+                      for(t in 2:C2-1){ p2[i,j,t]<- Q2[i,j,t]-Q2[i,j,t-1] }
+                      p2[i,j,C2]<- 1-Q2[i,j,C2-1]
+       for(t in 1:C2-1){ logit(Q2[i,j,t])<- alph2[j,t]-mu[i,20+2*j] } }  #end j
+
+       mu[i,21]<- xi2[i,1]
+       mu[i,22]<- lam[9]*xi2[i,1]
+       mu[i,23]<- xi2[i,2]
+       mu[i,24]<- lam[10]*xi2[i,2]
+       mu[i,25]<- xi2[i,3]
+       mu[i,26]<- lam[11]*xi2[i,3]
+       mu[i,27]<- xi2[i,4]
+       mu[i,28]<- lam[12]*xi2[i,4]
+
+       xi2[i,1]<- xi[i,5]
+       xi2[i,2]<- xi[i,5]+xi[i,6]
+       xi2[i,3]<- xi[i,5]+2*xi[i,6]
+       xi2[i,4]<- xi[i,5]+11*xi[i,6] }
+
+      # thresholds for latent variables
+
+    for(j in 1:4){ alph1[j,2]~ dnorm(0.0, 2.0)I(alph1[j,1],) }
+
+    for(j in 1:4){
+              alph2[j,2]~ dnorm(0.0, 2.0)I(alph2[j,1],alph2[j,3])
+              alph2[j,3]~ dnorm(0.0, 2.0)I(alph2[j,2],alph2[j,4])
+              alph2[j,4]~ dnorm(0.0, 2.0)I(alph2[j,3],) }
+
+            for(j in 1:4){ alph1[j, 1]<- 0   alph2[j, 1]<- 0 }
+
+     # priors on loadings and coefficients
+     vu[1]~dnorm(0.0,4.0)      vu[2]~dnorm(0.0,4.0)
+     for(j in 1:12){ lam[j]~ dnorm(1.0, 4.0) }
+     for(j in 1:12){ gam[j]~ dnorm(1.0, 4.0) }
+
+    # priors on precisions
+     for(j in 1:20){ psi[j]~dgamma(10.0,4.0)
+                      v[j]<-1/psi[j] }
+     for(j in 1:2) { psd[j]~dgamma(10.0,4.0)
+                      vd[j]<- 1/psd[j] }
+     phi[1:6,1:6]~dwish(RR[1:6,1:6],6)
+     phx[1:6,1:6]<- inverse(phi[1:6,1:6])
+
+     # put all the parameters' results into bb
+
+     for(j in 1:2){ bb[j]<- vu[j]  }
+     for(j in 1:12){ bb[2+j]<- lam[j] }
+     for(j in 1:12){ bb[14+j]<- gam[j] }
+     for(j in 1:2){ bb[26+j]<- vd[j] }
+     for(j in 1:20){ bb[28+j]<- v[j] }
+     for(j in 1:6){ bb[48+j]<- phx[1,j] }
+     for(j in 2:6){ bb[54+j-1]<- phx[2,j] }
+     for(j in 3:6){ bb[59+j-2]<- phx[3,j] }
+     for(j in 4:6){ bb[63+j-3]<- phx[4,j] }
+     for(j in 5:6){ bb[66+j-4]<- phx[5,j] }
+     for(j in 6:6){ bb[68+j-5]<- phx[6,j] }
+     for(j in 1:4){ bb[69+j]<- alph1[j,2] }
+     for(j in 1:4){ bb[73+j]<- alph2[j,2] }
+     for(j in 1:4){ bb[77+j]<- alph2[j,3] }
+     for(j in 1:4){ bb[81+j]<- alph2[j,4] }
+}
+
+# init 1 
+list(paste initial value 1)
+
+# init 2 
+list(paste initial value 2)
+
+# init 3 
+list(paste initial value 3)
+
+# Data
+ list(N=321, u=c(0,0,0,0,0,0),  C1=3, C2=5,
+    RR=structure(.Data= c(1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                          0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+                          0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
+                          0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+                          0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
+                          0.0, 0.0, 0.0, 0.0, 0.0, 1.0), .Dim= c(6,6)),
+      y=structure(.Data=c(paste continuous variable), .Dim=c(321,20)),
+      z1=structure(.Data=c(paste the first ordinal variable), .Dim=c(321,4)),
+      z2=structure(.Data=c(paste the second ordinal variable), .Dim=c(321,4)))
