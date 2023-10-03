@@ -1,0 +1,67 @@
+This is a WinBUGS program for the real example in Chapter 7, Section 7.2.1.
+
+Model: Structural Equation Model with dichotomous data
+Date Set Names: full1.dat, and XI.dat, where XI.dat are input initial values for xi.
+Sample Size: N=837
+
+model{
+	for(i in 1:N){  
+        #measurement equation model
+		for(j in 1:P){y[i,j]~dnorm(mu[i,j],psi[j])I(low[z[i,j]+1],high[z[i,j]+1])}
+		mu[i,1]<-eta[i]
+		mu[i,2]<-lam[1]*eta[i]
+		mu[i,3]<-lam[2]*eta[i]
+		mu[i,4]<-xi[i,1]
+		mu[i,5]<-lam[3]*xi[i,1]
+		mu[i,6]<-lam[4]*xi[i,1]
+		mu[i,7]<-xi[i,2]
+		mu[i,8]<-lam[5]*xi[i,2]
+		mu[i,9]<-lam[6]*xi[i,2]		
+		#structural equation model
+		xi[i,1:2]~dmnorm(u[1:2],phi[1:2,1:2])
+		eta[i]~dnorm(nu[i],psd)
+		nu[i]<-gam[1]*xi[i,1]+gam[2]*xi[i,2]		
+	} #end of i	
+    for(j in 1:P){psi[j]<-1.0}
+	for(j in 1:2){u[j]<-0.0}	
+	#priors on loadings and coefficients
+	lam[1]~dnorm(3.12,4.0)      lam[2]~dnorm(0.10,4.0)      lam[3]~dnorm(3.32,4.0)
+    lam[4]~dnorm(3.10,4.0)      lam[5]~dnorm(4.30,4.0)      lam[6]~dnorm(3.14,4.0)
+    var.gam<-4.0*psd
+    gam[1]~dnorm(-1.0,var.gam)     gam[2]~dnorm(0.86,var.gam)	
+	#priors on precisions
+	psd~dgamma(8.0, 10.0)
+	sgd<-1/psd
+	phi[1:2,1:2]~dwish(R[1:2,1:2], 8)
+	phx[1:2,1:2]<-inverse(phi[1:2,1:2])	
+} # end of model
+
+Data
+list(N=837, P=9, low=c(-2000,0), high=c(0,2000),
+    R=structure(
+		.Data=c(1.0,  0.0,
+		             0.0, 1.0),.Dim=c(2,2)),
+	z=structure(
+		.Data=c(paste the full1.dat here),.Dim=c(837,9)))
+		
+Three different Initial values
+list(lam=c(0.8,0.8,0.8,0.8,0.8,0.8),gam=c(-1.2,1.0),psd=0.5,
+	phi=structure(
+		.Data=c(1.0, 0.5,
+		             0.5,1.0),.Dim=c(2,2)),
+	xi=structure(
+		.Data=c(paste the XI.dat here),.Dim=c(837,2)))
+		
+list(lam=c(0.6,0.6,0.6,0.6,0.6,0.6),gam=c(-1.0,0.8),psd=1.0,
+	phi=structure(
+		.Data=c(1.2, 0.0,
+		             0.0,1.2),.Dim=c(2,2)),
+	xi=structure(
+		.Data=c(paste the XI.dat here),.Dim=c(837,2)))
+		
+list(lam=c(1.0,1.0,1.0,1.0,1.0,1.0),gam=c(-1.5,1.2),psd=0.8,
+	phi=structure(
+		.Data=c(0.8,0.1,
+		             0.1,0.8),.Dim=c(2,2)),
+	xi=structure(
+		.Data=c(paste the XI.dat here),.Dim=c(837,2)))
