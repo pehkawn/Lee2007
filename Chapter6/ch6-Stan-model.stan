@@ -2,12 +2,21 @@ data{
 	int<lower=0> N; // number of observations
     int<lower=1> P; // number of variables
     array[N, P] int<lower=1, upper=5> z; // observed data
-	array[P] ordered[4] thd; // Thresholds
+	// array[P] ordered[6] thd; // Thresholds
+    array[P, 6] real thd; // Thresholds
 }
 
 transformed data {
    	cov_matrix[4] R = diag_matrix(rep_vector(8.0, 4)); // prior covariance matrix for xi
 	vector[4] u = rep_vector(0,4); // prior mean for xi
+    array[N, P] real L;
+    array[N, P] real U;
+    for(i in 1:N){
+		for(j in 1:P){
+			L[i,j] = thd[j, z[i, j]];
+            U[i,j] = thd[j, z[i, j] + 1];
+		}
+    }
 }
 
 parameters {
@@ -18,6 +27,7 @@ parameters {
 	vector<lower=0>[P] psi; // precisions of y
 	real<lower=0> psd; // precision of eta
 	cov_matrix[4] phi;
+    array[N, P] real<lower=L, upper=U> y;
 	
 }
 
@@ -25,12 +35,15 @@ transformed parameters {
     vector[P] sgm = 1/psi;
     real sgd = 1/psd;
     matrix[4, 4] phx = inverse(phi);
+    // array[N, P] real<lower=L, upper=U>
 }
 
 model {
 	// Local variables
-    array[N] vector[P] mu;
-    array[N] vector[P] ephat;
+    // array[N] vector[P] mu;
+    // array[N] vector[P] ephat;
+    array[N, P] real mu;
+    array[N, P] real ephat;
     vector[N] nu;
     vector[N] dthat;
 	array[21] real var_lam;
@@ -101,10 +114,10 @@ model {
         mu[i,26] = lam[21] * xi[i,4];
 
 		for(j in 1:P){
-            // y[i,j] ~ normal(mu[i,j], psi[j]) * step(thd[j, z[i,j]] - y[i,j]);
-			z[i,j] ~ ordered_logistic(mu[i,j], thd[j]);
+            ephat[i, j] = y[i, j] - mu[i, j];
+            y[i,j] ~ normal(mu[i,j], psi[j])T[L[i, j], U[i, j]];
         }
-		// ephat[i] = y[i] - mu[i];
+		
 
         // structural equation model
 
