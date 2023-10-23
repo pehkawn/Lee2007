@@ -1,4 +1,4 @@
-model{
+model { 
 	for(i in 1:N){
 		#measurement equation model
 		for(j in 1:P){
@@ -22,24 +22,24 @@ model{
     	mu[i, 15] <- lam[12] * xi[i, 2]
 		mu[i, 16] <- xi[i, 3]
 		mu[i, 17] <- lam[13] * xi[i, 3]
-		mu[i, 18] <- lam[14] * xi[i, 3]		
-		mu[i, 19] <- xi[i, 4]		
-		mu[i, 20] <- lam[15] * xi[i, 4]		
-		mu[i, 21] <- lam[16] * xi[i, 4]		
-		mu[i, 22] <- lam[17] * xi[i, 4]		
-		mu[i, 23] <- lam[18] * xi[i, 4]		
-		mu[i, 24] <- lam[19] * xi[i, 4]		
-		mu[i, 25] <- lam[20] * xi[i, 4]		
-		mu[i, 26] <- lam[21] * xi[i, 4]		
-																
+		mu[i, 18] <- lam[14] * xi[i, 3]
+		mu[i, 19] <- xi[i, 4]
+		mu[i, 20] <- lam[15] * xi[i, 4]
+		mu[i, 21] <- lam[16] * xi[i, 4]
+		mu[i, 22] <- lam[17] * xi[i, 4]
+		mu[i, 23] <- lam[18] * xi[i, 4]
+		mu[i, 24] <- lam[19] * xi[i, 4]
+		mu[i, 25] <- lam[20] * xi[i, 4]
+		mu[i, 26] <- lam[21] * xi[i, 4]
+
 		#structural equation model
 		xi[i, 1:4] ~ dmnorm(u[1:4], phi[1:4, 1:4])
 		eta[i] ~ dnorm(nu[i], psd)
 		nu[i] <- gam[1] * xi[i, 1] + gam[2] * xi[i, 2] + gam[3] * xi[i, 3] + gam[4] * xi[i, 4]
 		dthat[i] <- eta[i]-nu[i]
-	}# end of i
+	} # end of i
 	
-	for(i in 1:4){u[i] <- 0.0}
+	for(k in 1:4) { u[k] <- 0.0 }
 	
 	#priors on loadings and coefficients
 	var.lam[1] <- 4.0 * psi[2]
@@ -63,7 +63,7 @@ model{
 	var.lam[19] <- 4.0 * psi[24]
     var.lam[20] <- 4.0 * psi[25]
     var.lam[21] <- 4.0 * psi[26]
-	for(i in 1:21){lam[i] ~ dnorm(0.8, var.lam[i])}	
+	for(i in 1:21){	lam[i] ~ dnorm(0.8, var.lam[i])	}
 
 	var.gam <- 4.0 * psd
 	gam[1] ~ dnorm(0.6, var.gam)
