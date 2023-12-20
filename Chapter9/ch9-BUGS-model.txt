@@ -1,5 +1,4 @@
-model
-{
+model {
     for (g in 1:50) {
         for (i in 1:N[g]) {
             for (j in 1:9) {
@@ -38,6 +37,7 @@ model
     mu[1] ~ dnorm(4.248, 4)
     mu[2] ~ dnorm(4.668, 4)
     mu[3] ~ dnorm(4.56, 4)
+    mu[4] ~ dnorm(2.389,4.0)
     mu[5] ~ dnorm(3.161, 4)
     mu[6] ~ dnorm(3.445, 4)
     mu[7] ~ dnorm(0.526, 4)
