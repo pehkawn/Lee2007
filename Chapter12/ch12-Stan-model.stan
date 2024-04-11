@@ -3,11 +3,14 @@ data{
     int<lower=1> P; // number of variables
     cov_matrix[2] RR; // prior covariance matrix for xi
 	vector[2] u; // prior mean for xi
-    array[N] vector[P] y; // observed data
+    array[N] row_vector[P] y;
+    // matrix[N, P] y; // observed data
     array[N, P] int<lower=0, upper=1> R;
+    // matrix<lower=0, upper=1>[N, P] R;
 	}
 
 transformed data {
+    
     vector[8] mu_vu = [-0.145, -0.086, 0.012, 0.004, -0.143, -0.036, 0.029, 0.143]';
     vector[9] mu_b = [-2.798, 0.041, -0.281, 0.365, -0.264, -0.524, -0.275, -0.061, 0.327]';
     
@@ -24,7 +27,7 @@ parameters {
     vector[9] b;
     vector[5] lam; // pattern coefficients
 	vector[3] gam; // coefficients
-	matrix[N, 2] xi; // latent variables
+	array[N] row_vector[2] xi_a; // latent variables
     vector[N] xxi;
     vector[N] eta; // latent variables
     
@@ -37,6 +40,7 @@ transformed parameters {
     matrix[4, 4] phx = inverse(phi); //priors on precisions of phi
     
     // structural equation
+    matrix[N, 2] xi = to_matrix(xi_a); // latent variables
     vector[N] nu = xi * gam[:2] + gam[3] * square(xi[:, 1]);
     vector[N] dthat = xxi - nu;
     
@@ -45,11 +49,11 @@ transformed parameters {
     mu[:, 1] = vu[1] + xxi;
     mu[:, 2] = vu[2] + lam[1] * xxi;
     mu[:, 3] = vu[3] + xi[:, 1];
-    mu[:, 4:5] = vu[4:5] + lam[2:3] * xi[:, 1];
+    for(n in 4:5) { mu[:, n] = vu[n] + lam[n-2] * xi[:, 1]; }
     mu[:, 6] = vu[6] + xi[:, 2];
-    mu[:, 7:8] = vu[7:8] + lam[4:5] * xi[:, 2];
+    for(m in 7:8) { mu[:, m] = vu[m] + lam[m-3] * xi[:, 2]; }
 
-    vector[N] ephat = y - mu;
+    matrix[N, P] ephat = to_matrix(y) - mu;
 
     // put all the parameters' results into bb
     vector[37] bb;
@@ -82,14 +86,15 @@ model {
     gam ~ normal(mu_gam, 4.0 * psd);
     
     // structural equation
-    xi ~ multi_normal(u, phi);
+    xi_a ~ multi_normal(u, phi);
     xxi ~ normal(nu, psd);
 
-    // missingness mechanism model
-    R ~ bernoulli_logit(b[1] + b[2:9] * y);
-    
-    // measurement models
-    y ~ normal(mu, psi);	
+    for (i in 1:N) {
+        // missingness mechanism model
+        R[i, ] ~ bernoulli_logit(b[1] + y[i, ] * b[2:9]);
+        // measurement models
+        y[i, ] ~ normal(mu[i, ], psi);
+    }
     
     // end of model
 }
